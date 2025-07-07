@@ -1,26 +1,35 @@
 import sqlite3
+from fastapi import FastAPI
 
-conn = sqlite3.connect('bd.db')
+app = FastAPI()
 
+def get_connection():
+    return sqlite3.connect("bd.db")
+
+@app.get("/list")
 def list_notice():
+    conn = get_connection()
     cursor = conn.cursor()
     l=[]
     for row in cursor.execute('SELECT name FROM notes').fetchall():
         l.append(row[0])
     return l
 
-def new_notice(name):
+@app.get("/new")
+def new_notice(name:str):
     if not(name):
         return 0
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('INSERT INTO notes (name) VALUES (?)', (name,))
     conn.commit()
     return 1
 
-
-def save_notice(name, text):
+@app.get("/save")
+def save_notice(name:str, text:str):
     if not name or not text:
-        return 0 
+        return 0
+    conn = get_connection() 
     cursor = conn.cursor()
     cursor.execute('SELECT name FROM notes WHERE name = ?', (name,))
     existing = cursor.fetchone()
@@ -30,13 +39,14 @@ def save_notice(name, text):
     else:
         cursor.execute('INSERT INTO notes (name, text) VALUES (?, ?)', (name, text))
 
-
     conn.commit()
     return 1
 
 
 
-def del_notice(name):
+@app.get("/del")
+def del_notice(name: str):
+    conn = get_connection()
     cursor = conn.cursor()
     if not name:
         return 0
@@ -46,7 +56,9 @@ def del_notice(name):
     conn.commit()
     return 1
 
-def get_notice(name):
+@app.get("/get")
+def get_notice(name: str):
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT text FROM notes WHERE name = ?', (name,))
     rows = cursor.fetchall()
